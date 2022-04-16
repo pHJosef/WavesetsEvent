@@ -94,6 +94,11 @@ WavesetsEvent : AbstractWavesetsEvent {
 		^this.readChannel(path, channel, startFrame, numFrames, onComplete, server, minLength)
 	}
 
+	*readCachedBuf { |buf, server, onComplete, minLength|
+		^this.new.readCache(buf, server, onComplete, minLength)
+		} 
+
+
 	readChannel { |path, channel = 0, startFrame = 0, numFrames = -1, onComplete, server, minLength|
 		var finish, buffer;
 		server = server ? Server.default;
@@ -104,6 +109,20 @@ WavesetsEvent : AbstractWavesetsEvent {
 		finish = { this.setBuffer(buffer, onComplete, minLength) };
 		buffer = Buffer.readChannel(server ? Server.default, path, startFrame, numFrames, channels: channel.asArray, action: finish);
 	}
+
+	readCache { |buf, server, onComplete, minLength|
+		server = server ? Server.default;
+		if(server.serverRunning.not) {
+			"Reading WavesetsBuffer failed. Server % not running".format(server).warn;
+			^this
+		};
+		if(buf == nil) {
+			"Reading WavesetsBuffer failed. Buffer not found".warn;
+			^this
+		};
+		wavesets = Wavesets2.fromBuffer(buf, onComplete, minLength);
+		buffer = buf;
+	} 
 
 	setBuffer { |argBuffer, onComplete, minLength|
 		wavesets = Wavesets2.fromBuffer(argBuffer, onComplete, minLength);
